@@ -211,8 +211,8 @@ class CFraction implements IComposite {
         ) {
             return clone $numerator;
         } elseif (class_exists($numberClass)) {
-            $interphases = class_implements($numberClass);
-            if (isset($interphases['ISingle']) || isset($interphases['IComposite'])) {
+            $interfases = class_implements($numberClass);
+            if (isset($interfases['ISingle']) || isset($interfases['IComposite'])) {
                 //For numerator
                 if (!($numerator instanceof $numberClass)) {
                     if (empty($subClasses)) {

@@ -268,8 +268,8 @@ class CVector implements IComposite {
         $numberClass = reset($hierarchy);
 
         if (class_exists($numberClass)) {
-            $interphases = class_implements($numberClass);
-            if (isset($interphases['ISingle']) || isset($interphases['IComposite'])) {
+            $interfases = class_implements($numberClass);
+            if (isset($interfases['ISingle']) || isset($interfases['IComposite'])) {
                 $initedVector = array();
                 if (is_array($vector)) {
                     foreach($vector as $k => $element) {
