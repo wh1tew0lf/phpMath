@@ -495,7 +495,7 @@ class CSolver {
             $tempSol = self::gauss($temp, $f);
             
             if ($tempSol) {
-                for($i = 0; $i < $N; ++$i) {
+                for($i = 0; $i < $size; ++$i) {
                     $stop = $stop && ($numberClass::cmp(
                         $numberClass::abs($tempSol->getAt($i)),
                         $eps
@@ -579,23 +579,18 @@ class CSolver {
         }
         
         if ((null === $coeficients) || !is_array($coeficients)) {
-            $coeficients = array($numberClass::create($hierarchy, 1));
+            $coeficients = CVector::create($h, array(1));
         } else {
-            $coefs = array();
-            foreach($coeficients as $coeficient) {
-                $coefs[] = $numberClass::create($hierarchy, $coeficient);
-            }
-            $coeficients = $coefs;
+            $coeficients = CVector::create($h, $coeficients);
         }
-        $jacob = self::calculateJacobian($matrix, $pows);
-        $jacobPows = self::decPows($pows);
+        $iPows = self::decPows($pows);
         $iterCnt = $maxIters;
         $stop = false;
-        
-        if (null !== $show) {
+
+        /*if (null !== $show) {
             call_user_func_array($show, array('START', $matrix, $vector, $start));
-        }
-        
+        }*/
+
         for($i = 0; $i < $size; ++$i) {
             $zero = $numberClass::isZero($matrix->getAt($i, $i));
             if ($zero) {
@@ -604,7 +599,6 @@ class CSolver {
                         $matrix->swap($i, $l);
                         $vector->swap($i, $l);
                         $start->swap($i, $l);
-                        $jacob->swap($i, $l);
                         $zero = false;
                         break;
                     }
@@ -614,44 +608,43 @@ class CSolver {
             if ($zero) {
                 self::$errors[] = 'There are empty line ' . $i;
                 $stop = true;
+                break;
             }
         }
-        
-        if (null !== $show) {
-            call_user_func_array($show, array('PREPARED', $matrix, $vector, $start));
-        }
-        
-        $iterations = array();
-        $iterationsSize = count($coeficients);
+
+        $iterations = CMatrix::create($h, array($start));
+        $iterationsSize = $coeficients->getSize();
         
         while((--$iterCnt >= 0) && !$stop) {
+
+            echo '---==[' . ($maxIters - $iterCnt) . "]==---\n";
+
             $stop = true;
 
-            $f = self::testSolution($matrix, $vector, $start, $pows);
-            $temp = self::mulMatrixOnVector($jacob, $start, $jacobPows);
-            $tempSol = self::gauss($temp, $f);
-            
+            $iMatrix = self::mulMatrixOnVector($matrix, $start, $iPows);
+            $tempSol = self::gauss($iMatrix, $vector);
+
+            echo "---Matr:\n" . $iMatrix . "\n---\n";
             if ($tempSol) {
-                
-                $iterations[] = clone $tempSol;
-                if (count($iterations) > $iterationsSize) {
-                    array_shift($iterations);
+                $iterations->insertLine(0, $tempSol);
+                if ($iterations->getHeight() > $iterationsSize) {
+                    $iterations->removeLine($iterationsSize);
                 }
-                
-                for($i = 0; $i < $N; ++$i) {
+
+                echo "---iterations:\n" . $iterations . "\n---\n";
+
+                for($i = 0; $i < $size; ++$i) {
                     $old = clone $start->getAt($i);
-                    
+
+                    $start->setAt($i, 0);
                     for($j = 0; $j < $iterationsSize; ++$j) {
-                        
-                        if (isset($iterations[$j])) {
-                            $start->setAt($i, $numberClass::add(
-                                $start->getAt($i),
-                                $numberClass::mul(
-                                    $iterations[$j]->getAt($i),
-                                    $coeficients[$j]
-                                )
-                            ));
-                        }
+                        $start->setAt($i, $numberClass::add(
+                            $start->getAt($i),
+                            $numberClass::mul(
+                                $iterations->getAt($j, $i),
+                                $coeficients->getAt($j)
+                            )
+                        ));
                     }
                     
                     $stop = $stop && ($numberClass::cmp(
@@ -669,15 +662,15 @@ class CSolver {
                         $stop = true;
                         break;
                     }
-                }
+                } 
             } else {
                 $stop = true;
                 self::$errors[] = 'There are no solution';
             }
             
-            if (null !== $show) {
+            /*if (null !== $show) {
                 call_user_func_array($show, array($maxIters - $iterCnt, $start, $f, $tempSol));
-            }
+            }*/
         }
         
         return $start;

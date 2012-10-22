@@ -21,6 +21,10 @@ class CMatrix extends CVector {
 
         $vectors = array();
         for($i = 0; $i < $N; ++$i) {
+            if ($matrix[$i] instanceof CVector) {
+                $vectors[$i] = clone $matrix[$i];
+                continue;
+            }
             $count = count($matrix[$i]);
             if ($count < $M) {
                 $matrix[$i] = array_pad($matrix[$i], $M, 0);
@@ -86,8 +90,9 @@ class CMatrix extends CVector {
             return $this->_vector[$i]->getAt($j);
         }
 
+        $h = $this->getSubHierarchy();
+        $numberClass = reset(explode(self::HIERARHY_SEPARATOR, $h));
         $hierarhy = $this->getSubHierarchy('', 2);
-        $numberClass = reset(explode(self::HIERARHY_SEPARATOR,$hierarhy));
         if (empty($hierarhy)) {
             return $numberClass::create(0);
         } else {

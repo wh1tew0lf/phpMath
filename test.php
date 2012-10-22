@@ -27,6 +27,17 @@ $st = array(
 
 
 $coef = array(
+    /*
+    CFraction::create('CInteger',1,2),
+    CFraction::create('CInteger',1,4),
+    CFraction::create('CInteger',1,8),
+    CFraction::create('CInteger',1,16),
+    CFraction::create('CInteger',1,32),
+    CFraction::create('CInteger',1,64),
+    CFraction::create('CInteger',1,128),
+    CFraction::create('CInteger',1,256),
+    CFraction::create('CInteger',1,8),
+    //*/
     CFraction::create('CInteger',1,2),
     CFraction::create('CInteger',1,3),
     CFraction::create('CInteger',1,6),
@@ -44,19 +55,18 @@ $solution = CSolver::nyuton2(
     CFraction::create('CInteger', 1, 10000),
     CFraction::create('CInteger', 10000, 1),
     array('CSolver','showNyuton'),
-    500,
+    100,
     $coef,
     $start
 );
 
 if (empty(CSolver::$errors)) {
     echo 'Solution: ' . $solution . "\n";
+    echo 'Tested solution: ' . CSolver::testSolution($matrix, $vector, $solution, $pows) . "\n";
 } else {
     echo "No solution\n";
     var_dump(CSolver::$errors);
 }
-
-echo 'Tested solution: ' . CSolver::testSolution($matrix, $vector, $solution, $pows) . "\n";
 //*/
 
 
