@@ -213,6 +213,16 @@ class CFraction implements IComposite {
         } elseif (class_exists($numberClass)) {
             $interfases = class_implements($numberClass);
             if (isset($interfases['ISingle']) || isset($interfases['IComposite'])) {
+                //Add string representation of fractions (for example "1/2")
+                if (is_string($numerator) && (1 === $denominator)) {
+                    $parts = explode('/', $numerator);
+                    $count = count($parts);
+                    if (($count > 0) && (0 == ($count % 2))) {
+                        $numerator = implode('/',array_slice($parts, 0, $count / 2 ));
+                        $denominator = implode('/', array_slice($parts, $count / 2 ));
+                    }
+                }
+
                 //For numerator
                 if (!($numerator instanceof $numberClass)) {
                     if (empty($subClasses)) {
