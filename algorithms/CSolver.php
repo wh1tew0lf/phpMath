@@ -577,9 +577,9 @@ class CSolver {
             $size = min($size, $S);
         }
 
-        if ((null === $coeficients) || !is_array($coeficients)) {
+        if ((null === $coeficients)) {
             $coeficients = CVector::create($h, array(1));
-        } else {
+        } elseif(is_array($coeficients)) {
             $coeficients = CVector::create($h, $coeficients);
         }
         $iPows = self::decPows($pows);
@@ -642,6 +642,10 @@ class CSolver {
 
                     $start->setAt($i, 0);
                     for($j = 0; $j < $iterationsSize; ++$j) {
+                        
+                        if (null !== $show) {
+                            echo $iterations->getAt($j, $i) . ' * ' . $coeficients->getAt($j) . ' + ';
+                        }
                         $start->setAt($i, $numberClass::add(
                             $start->getAt($i),
                             $numberClass::mul(
@@ -650,7 +654,9 @@ class CSolver {
                             )
                         ));
                     }
-
+                    if (null !== $show) {
+                        echo ' = ' . $start->getAt($i) . "\n";
+                    }
                     $stop = $stop && ($numberClass::cmp(
                         $numberClass::abs(
                             $numberClass::sub(

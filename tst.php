@@ -1,4 +1,8 @@
 <?php
+
+echo "error\n";
+echo "stop\n";
+die();
 if (!isset($argv) || (count($argv) < 3)) {
     die("Error\n");
 }
@@ -7,7 +11,7 @@ require_once 'loader.php';
 
 $N = $argv[1]; // размер матрицы
 $powMin = 1;
-$powMax = 2;
+$powMax = 4;
 $elMin = 1;
 $elMax = 100;
 $maxIters = $argv[2];   // максимальное количество итераций
@@ -32,7 +36,6 @@ for($i = 0; $i < $N; ++$i) {
     }
     $test[$i][$i] = CFraction::create('CInteger', 1, 1);
 }
-
 
 $pows = array();
 for($i = 0; $i < $N; ++$i) {
@@ -74,7 +77,6 @@ $solution = CSolver::nyuton2(
 
 if (empty(CSolver::$errors)) {
     echo CSolver::$iter . "\n";
-    echo $solution . "\n";
     echo CSolver::testSolution($matrix, $vector, $solution, $pows) . "\n";
 } else {
     echo "error\n";
@@ -82,4 +84,3 @@ if (empty(CSolver::$errors)) {
         echo $error . "\n";
     }
 }
-
