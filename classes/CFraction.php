@@ -23,7 +23,7 @@ class CFraction implements IComposite {
      * if 0 than no deletion
      * @var integer
      */
-    protected static $_infelicity = 20;
+    protected static $_infelicity = 0;
 
     /**
      * How to show as string - decimal or standart
@@ -123,7 +123,7 @@ class CFraction implements IComposite {
         } elseif (self::$_decimal) {
             return $this->_asFloatStr();
         } else {
-            return (string)($this->_numerator . '/' . $this->_denominator);
+            return (string)($this->_numerator . '/' . $this->_denominator . ' ');
         }
     }
 
@@ -190,12 +190,11 @@ class CFraction implements IComposite {
     /**
      * Factory constructor
      * @param string|array $hierarchy must implement INumber
-     * @param mixed $numerator
-     * @param mixed $denominator
+     * @param array $values
      * @return self
      * @throws Exception if class incorrect ot do not implement INumber
      */
-    public static function create($hierarchy, $numerator = 0, $denominator = 1) {
+    public static function create($hierarchy, $values) {
         if (is_string($hierarchy)) {
             $hierarchy = explode(self::HIERARHY_SEPARATOR, $hierarchy);
         }
@@ -205,6 +204,24 @@ class CFraction implements IComposite {
         $subClasses = array_slice($hierarchy, 1);
         $numberClass = reset($hierarchy);
 
+        $numerator = 0;
+        $denominator = 1;
+        if (is_array($values)) {
+            foreach(array(0, 'n', 'numerator') as $key) {
+                if (isset($values[$key])) {
+                    $numerator = $values[$key];
+                }
+            }
+            foreach(array(1, 'd', 'denominator') as $key) {
+                if (isset($values[$key])) {
+                    $denominator = $values[$key];
+                }
+            }
+        } else {
+            $numerator = $values;
+        }
+
+
         if (
             ($numerator instanceof self) &&
             (self::cmpHierarchy($numerator, implode(self::HIERARHY_SEPARATOR, $hierarchy)))
@@ -213,16 +230,6 @@ class CFraction implements IComposite {
         } elseif (class_exists($numberClass)) {
             $interfases = class_implements($numberClass);
             if (isset($interfases['ISingle']) || isset($interfases['IComposite'])) {
-                //Add string representation of fractions (for example "1/2")
-                if (is_string($numerator) && (1 === $denominator)) {
-                    $parts = explode('/', $numerator);
-                    $count = count($parts);
-                    if (($count > 0) && (0 == ($count % 2))) {
-                        $numerator = implode('/',array_slice($parts, 0, $count / 2 ));
-                        $denominator = implode('/', array_slice($parts, $count / 2 ));
-                    }
-                }
-
                 //For numerator
                 if (!($numerator instanceof $numberClass)) {
                     if (empty($subClasses)) {
@@ -336,7 +343,7 @@ class CFraction implements IComposite {
                 $numberClass::mul($b->_numerator, $a->_denominator)
             );
             $denominator = $numberClass::mul($a->_denominator, $b->_denominator);
-            return self::create($a->_hierarchy, $numerator, $denominator);
+            return self::create($a->_hierarchy, array('n' => $numerator, 'd' => $denominator));
         }
         throw new Exception('Classes of a and b must be equal!');
     }
@@ -355,7 +362,7 @@ class CFraction implements IComposite {
                 $numberClass::mul($b->_numerator, $a->_denominator)
             );
             $denominator = $numberClass::mul($a->_denominator, $b->_denominator);
-            return self::create($a->_hierarchy, $numerator, $denominator);
+            return self::create($a->_hierarchy, array('n' => $numerator, 'd' => $denominator));
         }
         throw new Exception('Classes of a and b must be equal!');
     }
@@ -371,7 +378,7 @@ class CFraction implements IComposite {
             $numberClass = $a->_numberClass;
             $numerator = $numberClass::mul($a->_numerator,$b->_numerator);
             $denominator = $numberClass::mul($b->_denominator, $a->_denominator);
-            return self::create($a->_hierarchy, $numerator, $denominator);
+            return self::create($a->_hierarchy, array('n' => $numerator, 'd' => $denominator));
         }
         throw new Exception('Classes of a and b must be equal!');
     }
@@ -387,7 +394,7 @@ class CFraction implements IComposite {
             $numberClass = $a->_numberClass;
             $numerator = $numberClass::mul($a->_numerator,$b->_denominator);
             $denominator = $numberClass::mul($b->_numerator, $a->_denominator);
-            return self::create($a->_hierarchy, $numerator, $denominator);
+            return self::create($a->_hierarchy, array('n' => $numerator, 'd' => $denominator));
         }
         throw new Exception('Classes of a and b must be equal!');
     }
@@ -401,12 +408,9 @@ class CFraction implements IComposite {
     public static function gcd(self $a, self $b) {
         if (self::cmpHierarchy($a, $b)) {
             $numberClass = $a->_numberClass;
-            return self::create(
-                $a->_hierarchy,
-                $numberClass::gcd($a->_numerator, $b->_numerator),
-                $numberClass::gcd($a->_denominator, $b->_denominator),
-                false
-            );
+            $numerator = $numberClass::gcd($a->_numerator, $b->_numerator);
+            $denominator = $numberClass::gcd($a->_denominator, $b->_denominator);
+            return self::create($a->_hierarchy, array('n' => $numerator, 'd' => $denominator));
         }
         throw new Exception('Classes of a and b must be equal!');
     }

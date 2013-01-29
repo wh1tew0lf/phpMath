@@ -9,7 +9,7 @@ interface IComposite extends INumber {
     /**
      * Creates new example of current class
      * @param type $hierarhy
-     * @param mixed $values
+     * @param array $values
      * @return self self object
      */
     public static function create($hierarhy, $values);

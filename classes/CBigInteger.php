@@ -5,10 +5,10 @@
  * @author Danil Volkov <volkovdanil91@gmail.com>
  * @package phpMath
  */
-class CInteger implements ISingle {
+class CBigInteger implements ISingle {
     /**
      * Value of this integer
-     * @var integer
+     * @var resource of  GMP integer
      */
     protected $_value = null;
 
@@ -23,14 +23,16 @@ class CInteger implements ISingle {
     /**
      * Magic method that creates copy of current object
      */
-    public function __clone() {}
+    public function __clone() {
+        $this->_value = gmp_init(gmp_strval($this->_value));
+    }
 
     /**
      * Magic metod for string representation
      * @return string representation
      */
     public function __toString() {
-        return (string)$this->_value;
+        return gmp_strval($this->_value);
     }
 
     /**
@@ -38,7 +40,7 @@ class CInteger implements ISingle {
      * @return integer Value
      */
     public function getVal() {
-        return $this->_value;
+        return gmp_intval($this->_value);
     }
 
     /**
@@ -48,11 +50,13 @@ class CInteger implements ISingle {
      */
     public static function create($value = 0) {
         if ($value instanceof self) {
-            $initedValue = $value->_value;
-        } elseif (is_string($value) || is_numeric($value)) {
-            $initedValue = (int)$value;
+            $initedValue = gmp_init(gmp_strval($value->_value));
+        } elseif (is_string($value) || is_int($value)) {
+            $initedValue = gmp_init($value);
+        } elseif (is_resource($value) && ('GMP integer' === get_resource_type($value))) {
+            $initedValue = $value;
         } else {
-            $initedValue = 0;
+            $initedValue = gmp_init(0);
         }
         return new self($initedValue);
     }
@@ -64,7 +68,7 @@ class CInteger implements ISingle {
      * @return self return sum
      */
     public static function add(self $a, self $b) {
-        return self::create($a->_value + $b->_value);
+        return self::create(gmp_add($a->_value, $b->_value));
     }
 
     /**
@@ -74,7 +78,7 @@ class CInteger implements ISingle {
      * @return self return difference
      */
     public static function sub(self $a, self $b) {
-        return self::create($a->_value - $b->_value);
+        return self::create(gmp_sub($a->_value, $b->_value));
     }
 
     /**
@@ -84,7 +88,7 @@ class CInteger implements ISingle {
      * @return self return product
      */
     public static function mul(self $a, self $b) {
-        return self::create($a->_value * $b->_value);
+        return self::create(gmp_mul($a->_value, $b->_value));
     }
 
     /**
@@ -97,7 +101,7 @@ class CInteger implements ISingle {
         if (self::isZero($b)) {
             throw new Exception('Class ' . __CLASS__ . ': Division by zero!');
         }
-        return self::create((int)($a->_value / $b->_value));
+        return self::create(gmp_div($a->_value, $b->_value));
     }
 
     /**
@@ -107,18 +111,7 @@ class CInteger implements ISingle {
      * @return self return greatest common divisor
      */
     public static function gcd(self $a, self $b) {
-        if (!self::isZero($a) && !self::isZero($b)) {
-            $mx = max(abs($a->_value), abs($b->_value));
-            $mn = min(abs($a->_value), abs($b->_value));
-
-            while($mn != 0) {
-                $tmp = $mn;
-                $mn = $mx % $mn;
-                $mx = $tmp;
-            }
-            return self::create($mx);
-        }
-        return self::create(1);
+        return self::create(gmp_gcd($a->_value, $b->_value));
     }
 
     /**
@@ -127,7 +120,7 @@ class CInteger implements ISingle {
      * @return boolean true if it is equal zero and false if not
      */
     public static function isZero(self $a) {
-        return (0 == $a->_value);
+        return (0 == gmp_cmp(gmp_init(0), $a->_value));
     }
 
     /**
@@ -136,7 +129,7 @@ class CInteger implements ISingle {
      * @return boolean true if it is equal one and false if not
      */
     public static function isOne(self $a) {
-        return (1 == $a->_value);
+        return (0 == gmp_cmp(gmp_init(1), $a->_value));
     }
 
     /**
@@ -145,7 +138,7 @@ class CInteger implements ISingle {
      * @return self return $a with opposite sign
      */
     public static function neg(self $a) {
-        return self::create(-$a->_value);
+        return self::create(gmp_neg($a->_value));
     }
 
     /**
@@ -154,7 +147,7 @@ class CInteger implements ISingle {
      * @return boolean true if it is less than 0
      */
     public static function isNeg(self $a) {
-        return ($a->_value < 0);
+        return (gmp_cmp(gmp_init(0), $a->_value) > 0);
     }
 
     /**
@@ -164,7 +157,7 @@ class CInteger implements ISingle {
      * @return 0 if equal, 1 if $a greater, -1 if $b greater
      */
     public static function cmp(self $a, self $b) {
-        return ($a->_value == $b->_value) ? 0 : (($a->_value - $b->_value) / abs($a->_value - $b->_value));
+        return gmp_cmp($a->_value, $b->_value);
     }
 
     /**
@@ -173,7 +166,7 @@ class CInteger implements ISingle {
      * @return self absolute value of $a
      */
     public static function abs(self $a) {
-        return self::create(abs($a->_value));
+        return self::create(gmp_abs($a->_value));
     }
 }
 ?>

@@ -1,12 +1,37 @@
 <?php
+/**
+ * Class that realize some algorithm for matrices
+ */
 class CSolver {
+    /**
+     * Array of errors that arises on algorithm work
+     * @var array
+     */
     public static $errors = array();
+    /**
+     * Try to reduce lines
+     * @var boolean
+     */
     public static $lineOptimize = true;
+    /**
+     * Clone objects of algorithm, or change objects
+     * @var boolean
+     */
     public static $clone = true;
+    /**
+     * Temp matrix inits on some algorithm start,
+     * you can use it for see what returned after algorithm
+     * @var mixed
+     */
     public static $matrix = null;
+    /**
+     * Temp vector inits on some algorithm start,
+     * you can use it for see what returned after algorithm
+     * @var mixed
+     */
     public static $vector = null;
-    public static $iter = 0;
 
+    // <editor-fold defaultstate="collapsed" desc="show iter function for some three algorithms">
     public static function showNyuton($i, $start, $f, $delta) {
         $str = "\n----- [" . $i . "] -----\n";
         $str = $str . 'F: ' . $f . "\n";
@@ -15,7 +40,6 @@ class CSolver {
         $str = $str . "----------------\n";
         echo $str;
     }
-
 
     public static function showGaussIter($i, $matrix, $vector) {
         $str = "\n----- [" . $i . "] -----\n";
@@ -40,8 +64,16 @@ class CSolver {
         $str = $str . "----------------\n";
 
         echo $str;
-    }
+    }// </editor-fold>
 
+    /**
+     * Substitute the solution to the equations
+     * @param CMatrix $matrix
+     * @param CVector $vector
+     * @param CVector $solution
+     * @param type $pows if it is non-linear equations
+     * @return CVector
+     */
     public static function testSolution(CMatrix $matrix, CVector $vector, CVector $solution, $pows = null) {
         $N = $matrix->getHeight();
         $M = $matrix->getWidth();
@@ -63,6 +95,13 @@ class CSolver {
         return CVector::create($h, $result);
     }
 
+    /**
+     * Gauth algorithm for solving linear equations
+     * @param CMatrix $matrix
+     * @param CVector $vector
+     * @param type $show
+     * @return boolean|CVector vector-solution if solved or false
+     */
     public static function gauss(CMatrix $matrix, CVector $vector, $show = null) {
         self::$errors = array();
         self::$matrix = null;
@@ -198,6 +237,17 @@ class CSolver {
         return $haveSolution;
     }
 
+    /**
+     * Iterative Gauss-Zeidel algorithm
+     * @param CMatrix $matrix
+     * @param CVector $vector
+     * @param INumber $eps
+     * @param INumber $big
+     * @param type $show
+     * @param type $maxIters
+     * @param CVector $start
+     * @return CVector vector of result
+     */
     public static function gaussZeidel(CMatrix $matrix, CVector $vector, INumber $eps, INumber $big = null, $show = null,  $maxIters = 50, CVector $start = null) {
         self::$errors = array();
         self::$matrix = null;
@@ -318,6 +368,12 @@ class CSolver {
         return $start;
     }
 
+    /**
+     * Involution to integer power
+     * @param INumber $value
+     * @param integer $pow
+     * @return INumber
+     */
     public static function pow(INumber $value, $pow) {
         $pow = (int)abs($pow);
         $numberClass = get_class($value);
@@ -333,6 +389,12 @@ class CSolver {
         return $one;
     }
 
+    /**
+     * calculates Jacobian
+     * @param CMatrix $matrix
+     * @param array $pows
+     * @return \CMatrix Jacobian
+     */
     public static function calculateJacobian(CMatrix $matrix, $pows) {
         $matrix = clone $matrix;
         if (is_array($pows)) {
@@ -361,6 +423,11 @@ class CSolver {
         return $matrix;
     }
 
+    /**
+     * Decrement each pow by 1
+     * @param array $pows
+     * @return array
+     */
     public static function decPows($pows) {
         $decremented = array();
         if (is_array($pows)) {
@@ -380,6 +447,13 @@ class CSolver {
         return $decremented;
     }
 
+    /**
+     * Substituted in the equation vector, but do not sum matrix coefficients
+     * @param CMatrix $matrix
+     * @param CVector $vector
+     * @param array $pows
+     * @return \CMatrix
+     */
     public static function mulMatrixOnVector(CMatrix $matrix, CVector $vector, $pows) {
         $matrix = clone $matrix;
         $H = $matrix->getHeight();
@@ -399,6 +473,18 @@ class CSolver {
         return $matrix;
     }
 
+    /**
+     * Nyuton alghorithm for solving non-linear equations
+     * @param CMatrix $matrix
+     * @param CVector $vector
+     * @param type $pows
+     * @param INumber $eps
+     * @param INumber $big
+     * @param type $show
+     * @param type $maxIters
+     * @param CVector $start
+     * @return CVector result of alghorithm works
+     */
     public static function nyuton(CMatrix $matrix, CVector $vector, $pows, INumber $eps, INumber $big, $show = null,  $maxIters = 50, CVector $start = null) {
         self::$errors = array();
         self::$matrix = null;
@@ -519,168 +605,6 @@ class CSolver {
             if (null !== $show) {
                 call_user_func_array($show, array($maxIters - $iterCnt, $start, $f, $tempSol));
             }
-        }
-
-        return $start;
-    }
-
-    public static function nyuton2(CMatrix $matrix, CVector $vector, $pows, INumber $eps, INumber $big, $show = null,  $maxIters = 50, $coeficients = null, CVector $start = null) {
-        self::$errors = array();
-        self::$matrix = null;
-        self::$vector = null;
-
-        if (self::$clone) {
-            $matrix = clone $matrix;
-            $vector = clone $vector;
-            if (null !== $start) {
-                $start = clone $start;
-            }
-        }
-
-        $N = $matrix->getHeight();
-        $M = $matrix->getWidth();
-        $L = $vector->getSize();
-        if ($N != $L) {
-            self::$errors[] = 'Size of matrix do not equal size of vector';
-        }
-
-        if ($N != $M) {
-            self::$errors[] = 'Matrix is not square';
-        }
-
-        if ($matrix->getSubHierarchy() != $vector->getHierarchy()) {
-            self::$errors[] = 'Matrix and vector elements do not same';
-        }
-
-        $h = $matrix->getSubHierarchy();
-        $numberClass = reset(explode(CMatrix::HIERARHY_SEPARATOR, $h));
-        $hierarchy = $vector->getSubHierarchy();
-
-        $size = min($N, $M, $L);
-
-        if (null === $start) {
-            $vect = array();
-            for($i = 0; $i < $size; ++$i) {
-                $vect[$i] =  $numberClass::create($hierarchy, 1);
-            }
-            $start = CVector::create($h, $vect);
-        } else {
-            $S = $start->getSize();
-
-            if ($S != $size) {
-                self::$errors[] = 'Size of matrix do not equal size of start';
-            }
-
-            if ($matrix->getSubHierarchy() != $start->getHierarchy()) {
-                self::$errors[] = 'Matrix and vector elements do not same';
-            }
-            $size = min($size, $S);
-        }
-
-        if ((null === $coeficients)) {
-            $coeficients = CVector::create($h, array(1));
-        } elseif(is_array($coeficients)) {
-            $coeficients = CVector::create($h, $coeficients);
-        }
-        $iPows = self::decPows($pows);
-        $iterCnt = $maxIters;
-        $stop = false;
-
-        /*if (null !== $show) {
-            call_user_func_array($show, array('START', $matrix, $vector, $start));
-        }*/
-
-        for($i = 0; $i < $size; ++$i) {
-            $zero = $numberClass::isZero($matrix->getAt($i, $i));
-            if ($zero) {
-                for($l = ($i + 1); $l < $size; ++$l) {
-                    if (!$numberClass::isZero($matrix->getAt($l, $i))) {
-                        $matrix->swap($i, $l);
-                        $vector->swap($i, $l);
-                        $start->swap($i, $l);
-                        $zero = false;
-                        break;
-                    }
-                }
-            }
-
-            if ($zero) {
-                self::$errors[] = 'There are empty line ' . $i;
-                $stop = true;
-                break;
-            }
-        }
-
-        $iterations = CMatrix::create($h, array($start));
-        $iterationsSize = $coeficients->getSize();
-
-        while((--$iterCnt >= 0) && !$stop) {
-
-            if (null !== $show) {
-                echo '---==[' . ($maxIters - $iterCnt) . "]==---\n";
-            }
-            self::$iter = $maxIters - $iterCnt;
-
-            $stop = true;
-
-            $iMatrix = self::mulMatrixOnVector($matrix, $start, $iPows);
-            $tempSol = self::gauss($iMatrix, $vector);
-            if (null !== $show) {
-                echo "---Matr:\n" . $iMatrix . "\n---\n";
-            }
-            if ($tempSol) {
-                $iterations->insertLine(0, $tempSol);
-                if ($iterations->getHeight() > $iterationsSize) {
-                    $iterations->removeLine($iterationsSize);
-                }
-                if (null !== $show) {
-                    echo "---iterations:\n" . $iterations . "\n---\n";
-                }
-
-                for($i = 0; $i < $size; ++$i) {
-                    $old = clone $start->getAt($i);
-
-                    $start->setAt($i, 0);
-                    for($j = 0; $j < $iterationsSize; ++$j) {
-                        
-                        if (null !== $show) {
-                            echo $iterations->getAt($j, $i) . ' * ' . $coeficients->getAt($j) . ' + ';
-                        }
-                        $start->setAt($i, $numberClass::add(
-                            $start->getAt($i),
-                            $numberClass::mul(
-                                $iterations->getAt($j, $i),
-                                $coeficients->getAt($j)
-                            )
-                        ));
-                    }
-                    if (null !== $show) {
-                        echo ' = ' . $start->getAt($i) . "\n";
-                    }
-                    $stop = $stop && ($numberClass::cmp(
-                        $numberClass::abs(
-                            $numberClass::sub(
-                                $start->getAt($i),
-                                $old
-                            )
-                        ),
-                        $eps
-                    ) < 0);
-
-                    if ($numberClass::cmp($big, $numberClass::abs($start->getAt($i))) < 0) {
-                        self::$errors[] = 'Elements to big [' . $start->getAt($i) . ']';
-                        $stop = true;
-                        break;
-                    }
-                }
-            } else {
-                $stop = true;
-                self::$errors[] = 'There are no solution';
-            }
-
-            /*if (null !== $show) {
-                call_user_func_array($show, array($maxIters - $iterCnt, $start, $f, $tempSol));
-            }*/
         }
 
         return $start;
